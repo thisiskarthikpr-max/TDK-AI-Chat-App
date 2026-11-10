@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+**/dist/
+**/coverage/
+
+# Logs and local state
+*.log
+.DS_Store
+.vite/
