@@ -5,6 +5,13 @@ import { connectDatabase } from './config/database.js';
 
 dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)) });
 
+const requiredSecrets = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+const missingSecrets = requiredSecrets.filter((name) => !process.env[name]);
+if (missingSecrets.length) {
+  console.error(`Missing required environment variables: ${missingSecrets.join(', ')}`);
+  process.exit(1);
+}
+
 const port = Number(process.env.PORT ?? 4000);
 
 try {

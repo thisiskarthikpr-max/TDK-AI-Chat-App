@@ -1,11 +1,30 @@
 # TDK AI Chat App
 
-A responsive AI chat application built as a take-home assignment. The project is being implemented in phases; this initial phase provides the React/Vite frontend scaffold and an Express API connected to MongoDB.
+A responsive AI chat application built as a take-home assignment. This phase adds email/password authentication with JWT sessions and protected routes to the React/Vite frontend and Express/Mongoose API.
 
-## Phase 1: scaffold and health check
+## Current features
 
-- Frontend: React 19 with Vite 8
-- Backend: Node.js 26 LTS, Express 5, and Mongoose 9 (`.nvmrc` pins the major version)
-- Health endpoint: `GET /api/health`
+- `POST /api/auth/signup`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, and `GET /api/auth/me`
+- Bcrypt password hashes (cost 12), generic login failures, Zod request validation, Helmet headers, CORS restriction, and per-IP auth rate limiting
+- 15-minute bearer access token kept in frontend memory; 7-day HttpOnly refresh cookie restores the session after a reload
+- Protected `/` route with responsive login and signup screens
+- `GET /api/health` reports whether MongoDB is connected
 
-Copy `.env.example` to `.env`, then install dependencies in `backend/` and `frontend/` and run MongoDB locally. Start the API with `cd backend && npm run dev` and the frontend with `cd frontend && npm run dev`. The API health endpoint returns `200` when MongoDB is connected and `503` otherwise.
+## Run locally
+
+Use Node.js 26 (`nvm use` reads `.nvmrc`), run MongoDB locally, and copy `.env.example` to `.env` at the repository root. Install and start each app in separate terminals:
+
+```sh
+cd backend && npm install && npm run dev
+cd frontend && npm install && npm run dev
+```
+
+The API runs on `http://localhost:4000`; the Vite app runs on `http://localhost:5173`.
+
+## Verify authentication
+
+```sh
+cd backend && npm test
+```
+
+The auth integration tests use `mongodb-memory-server`, so they do not use the local MongoDB database. On the first run, MongoDB Memory Server downloads its test binary. The suite covers signup and password hashing, login and generic failures, refresh-cookie exchange, and protected `/me` access.
