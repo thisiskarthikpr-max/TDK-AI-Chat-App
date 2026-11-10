@@ -53,11 +53,11 @@ export function AuthPage({ mode }) {
           <input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required maxLength={254} />
 
           <div className="label-row"><label htmlFor="password">Password</label>{!isSignup && <span>At least 8 characters</span>}</div>
-          <input id="password" name="password" type="password" autoComplete={isSignup ? 'new-password' : 'current-password'} placeholder="••••••••••••" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} maxLength={128} />
+          <input id="password" name="password" type="password" autoComplete={isSignup ? 'new-password' : 'current-password'} placeholder="••••••••••••" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} maxLength={72} />
 
           {isSignup && <>
             <label htmlFor="confirm-password">Confirm password</label>
-            <input id="confirm-password" name="confirm-password" type="password" autoComplete="new-password" placeholder="Enter your password again" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required minLength={8} maxLength={128} />
+            <input id="confirm-password" name="confirm-password" type="password" autoComplete="new-password" placeholder="Enter your password again" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required minLength={8} maxLength={72} />
           </>}
 
           {error && <p className="form-error" role="alert">{error}</p>}

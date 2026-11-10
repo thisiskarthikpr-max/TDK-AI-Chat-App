@@ -1,7 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 
 const ACCESS_TTL = '15m';
 const REFRESH_TTL = '7d';
+export const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const REFRESH_COOKIE = 'tdk_refresh';
 
 export function signAccessToken(userId) {
@@ -13,7 +15,7 @@ export function signAccessToken(userId) {
 }
 
 export function signRefreshToken(userId) {
-  return jwt.sign({}, process.env.JWT_REFRESH_SECRET, {
+  return jwt.sign({ jti: randomUUID() }, process.env.JWT_REFRESH_SECRET, {
     subject: String(userId),
     expiresIn: REFRESH_TTL,
     algorithm: 'HS256',
@@ -34,6 +36,6 @@ export function refreshCookieOptions() {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/api/auth',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: REFRESH_TTL_MS,
   };
 }
