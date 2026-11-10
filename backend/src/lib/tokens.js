@@ -32,9 +32,13 @@ export function verifyRefreshToken(token) {
 }
 
 export function refreshCookieOptions() {
+  const secure = process.env.COOKIE_SECURE === undefined
+    ? process.env.NODE_ENV === 'production'
+    : process.env.COOKIE_SECURE.toLowerCase() === 'true';
+
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure,
     sameSite: 'lax',
     path: '/api/auth',
     maxAge: REFRESH_TTL_MS,

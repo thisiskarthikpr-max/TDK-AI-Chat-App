@@ -25,7 +25,7 @@ Nginx serves the built SPA and proxies `/api/` to the Compose `api` service. It 
 - Passwords are hashed with bcrypt (cost 12); login errors are generic. Emails are trimmed and lowercased before storage and lookup.
 - The 15-minute HS256 access token stays in frontend memory. The 7-day refresh JWT is stored in an HttpOnly cookie.
 - On refresh, the API atomically consumes the old token and returns a replacement. MongoDB stores only SHA-256 token hashes with an expiry TTL index. Logout deletes the active token record. Reuse of a consumed token outside the small concurrent-tab retry window revokes all refresh tokens for that user.
-- Missing JWT secrets stop API startup. For production, set separate random values for `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`. Refresh cookies are `Secure` when `NODE_ENV=production`.
+- Missing JWT secrets stop API startup. For production, set separate random values for `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`. `COOKIE_SECURE` controls the refresh cookie's `Secure` flag; if unset, it defaults to true in production and false otherwise. The local Compose example sets `COOKIE_SECURE=false` for HTTP on localhost. Set it to `true` behind HTTPS in any deployed environment.
 - Helmet is enabled; CORS allows only `CLIENT_ORIGIN` and credentials. Auth routes are rate-limited. Express trusts one proxy hop (nginx) so rate limits see the forwarded client IP.
 
 Access tokens are not tracked in MongoDB; after logout they may remain usable until their 15-minute expiry. Rate limits use the default in-process `express-rate-limit` store, so counts are per API replica rather than shared across replicas.
