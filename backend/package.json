@@ -6,6 +6,9 @@
   "engines": {
     "node": ">=26 <27"
   },
+  "allowScripts": {
+    "bcrypt@6.0.0": true
+  },
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",

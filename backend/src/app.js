@@ -10,6 +10,10 @@ import chatsRouter from './routes/chats.js';
 export function createApp() {
   const app = express();
 
+  // The API is only reachable through nginx in the container stack. Trust its
+  // single forwarded client address so rate limits apply to the real client.
+  app.set('trust proxy', 1);
+
   app.use(helmet());
   app.use(cors({
     origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
