@@ -17,6 +17,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/signup" element={<AuthPage mode="signup" />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<ProtectedHome />} />
+            <Route path="/chat/:chatId" element={<ProtectedHome />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

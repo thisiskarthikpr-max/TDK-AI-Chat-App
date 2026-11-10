@@ -14,6 +14,7 @@ export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const tokenRef = useRef(null);
+  const refreshPromiseRef = useRef(null);
 
   const saveSession = useCallback((session) => {
     tokenRef.current = session.accessToken;
@@ -27,23 +28,51 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const refreshSession = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/auth/refresh`, {
+  const refreshSession = useCallback(() => {
+    if (refreshPromiseRef.current) return refreshPromiseRef.current;
+
+    const sendRefresh = async () => {
+      let response = await fetch(`${API_URL}/api/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
       });
-      if (!response.ok) {
+
+      // Fallback for browsers without Web Locks: a parallel tab may have just rotated the shared cookie.
+      for (const delayMs of [120, 300]) {
+        if (response.status !== 409) break;
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        response = await fetch(`${API_URL}/api/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+      }
+      return response;
+    };
+
+    const runRefresh = async () => {
+      try {
+        const response = typeof navigator !== 'undefined' && navigator.locks?.request
+          ? await navigator.locks.request('tdk-ai-chat-refresh', sendRefresh)
+          : await sendRefresh();
+        if (!response.ok) {
+          clearSession();
+          return null;
+        }
+        const session = await readJson(response);
+        saveSession(session);
+        return session.accessToken;
+      } catch {
         clearSession();
         return null;
       }
-      const session = await readJson(response);
-      saveSession(session);
-      return session.accessToken;
-    } catch {
-      clearSession();
-      return null;
-    }
+    };
+
+    const sharedPromise = runRefresh();
+    refreshPromiseRef.current = sharedPromise;
+    void sharedPromise.finally(() => {
+      if (refreshPromiseRef.current === sharedPromise) refreshPromiseRef.current = null;
+    });
+    return sharedPromise;
   }, [clearSession, saveSession]);
 
   useEffect(() => {

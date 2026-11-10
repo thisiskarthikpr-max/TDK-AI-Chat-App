@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import mongoose from 'mongoose';
 import { rateLimit } from 'express-rate-limit';
 import authRouter from './routes/auth.js';
+import chatsRouter from './routes/chats.js';
 
 export function createApp() {
   const app = express();
@@ -30,6 +31,7 @@ export function createApp() {
     legacyHeaders: false,
     message: { error: 'Too many authentication attempts. Try again shortly.' },
   }), authRouter);
+  app.use('/api/chats', chatsRouter);
 
   app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
   app.use((error, _req, res, _next) => {

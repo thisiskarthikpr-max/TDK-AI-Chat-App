@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { User, toPublicUser } from '../models/User.js';
 import { RefreshToken } from '../models/RefreshToken.js';
 import { hashRefreshToken } from '../lib/tokenHash.js';
-import { REFRESH_COOKIE, REFRESH_TTL_MS, refreshCookieOptions, signAccessToken, signRefreshToken, verifyRefreshToken } from '../lib/tokens.js';
+import { REFRESH_COOKIE, REFRESH_REUSE_GRACE_MS, REFRESH_TTL_MS, refreshCookieOptions, signAccessToken, signRefreshToken, verifyRefreshToken } from '../lib/tokens.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 
 const router = Router();
@@ -89,13 +89,26 @@ router.post('/refresh', async (req, res) => {
       return unauthorized(res);
     }
 
-    const activeToken = await RefreshToken.findOneAndDelete({
+    const activeToken = await RefreshToken.findOneAndUpdate({
       userId: payload.sub,
       tokenHash: hashRefreshToken(token),
+      consumedAt: null,
+    }, {
+      $set: { consumedAt: new Date() },
     });
 
     if (!activeToken) {
-      // A correctly signed but already-consumed token indicates replay. Revoke all sessions for this user.
+      const consumedToken = await RefreshToken.findOne({
+        userId: payload.sub,
+        tokenHash: hashRefreshToken(token),
+      });
+
+      if (consumedToken?.consumedAt && Date.now() - consumedToken.consumedAt.getTime() <= REFRESH_REUSE_GRACE_MS) {
+        // A second tab can submit the same cookie before the first response updates the shared cookie jar.
+        return res.status(409).json({ error: 'Refresh already in progress', code: 'REFRESH_IN_PROGRESS' });
+      }
+
+      // A consumed token replay outside the concurrency window indicates theft; revoke every session for this user.
       await RefreshToken.deleteMany({ userId: payload.sub });
       clearRefreshCookie(res);
       return unauthorized(res);

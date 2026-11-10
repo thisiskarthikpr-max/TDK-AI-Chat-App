@@ -7,6 +7,7 @@ import { createApp } from '../src/app.js';
 import { User } from '../src/models/User.js';
 import { RefreshToken } from '../src/models/RefreshToken.js';
 import { hashRefreshToken } from '../src/lib/tokenHash.js';
+import { REFRESH_REUSE_GRACE_MS } from '../src/lib/tokens.js';
 
 process.env.JWT_ACCESS_SECRET = 'test-access-secret-with-enough-entropy-123';
 process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-with-enough-entropy-456';
@@ -116,7 +117,7 @@ test('refresh exchanges the httpOnly cookie for a new access token', async () =>
   const rotatedCookie = refreshCookie(response);
   assert.notEqual(rotatedCookie, cookie);
   assert.match(response.headers.getSetCookie().join(';'), /HttpOnly/i);
-  assert.equal(await RefreshToken.countDocuments({}), 1);
+  assert.equal(await RefreshToken.countDocuments({ consumedAt: null }), 1);
 });
 
 test('protected /me rejects missing tokens and accepts a valid bearer token', async () => {
@@ -167,7 +168,12 @@ test('refresh token reuse revokes all refresh tokens for the user', async () => 
   });
   assert.equal(rotation.status, 200);
   const rotatedCookie = refreshCookie(rotation);
-  assert.equal(await RefreshToken.countDocuments({}), 1);
+  assert.equal(await RefreshToken.countDocuments({}), 2);
+
+  const originalHash = hashRefreshToken(originalCookie.slice('tdk_refresh='.length));
+  await RefreshToken.updateOne({ tokenHash: originalHash }, {
+    $set: { consumedAt: new Date(Date.now() - REFRESH_REUSE_GRACE_MS - 1) },
+  });
 
   const replay = await fetch(`${baseUrl}/api/auth/refresh`, {
     method: 'POST', headers: { cookie: originalCookie },
@@ -179,6 +185,28 @@ test('refresh token reuse revokes all refresh tokens for the user', async () => 
     method: 'POST', headers: { cookie: rotatedCookie },
   });
   assert.equal(revokedRotatedToken.status, 401);
+});
+
+test('two parallel refresh requests do not revoke the winning rotated token', async () => {
+  const signupResponse = await signup();
+  const originalCookie = refreshCookie(signupResponse);
+  const refreshRequest = () => fetch(`${baseUrl}/api/auth/refresh`, {
+    method: 'POST', headers: { cookie: originalCookie },
+  });
+
+  const responses = await Promise.all([refreshRequest(), refreshRequest()]);
+  assert.deepEqual(responses.map((response) => response.status).sort(), [200, 409]);
+  const success = responses.find((response) => response.status === 200);
+  const conflict = responses.find((response) => response.status === 409);
+  assert.equal((await conflict.json()).code, 'REFRESH_IN_PROGRESS');
+  assert.equal(conflict.headers.getSetCookie().length, 0);
+
+  const rotatedCookie = refreshCookie(success);
+  assert.equal(await RefreshToken.countDocuments({ consumedAt: null }), 1);
+  const nextRotation = await fetch(`${baseUrl}/api/auth/refresh`, {
+    method: 'POST', headers: { cookie: rotatedCookie },
+  });
+  assert.equal(nextRotation.status, 200);
 });
 
 test('wrong password is rejected with the generic login error', async () => {

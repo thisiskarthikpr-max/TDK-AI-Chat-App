@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 const ACCESS_TTL = '15m';
 const REFRESH_TTL = '7d';
 export const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const REFRESH_REUSE_GRACE_MS = 10 * 1000;
 export const REFRESH_COOKIE = 'tdk_refresh';
 
 export function signAccessToken(userId) {
