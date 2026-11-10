@@ -377,7 +377,7 @@ export default function ChatWorkspace() {
           </Link>
           <button className="sidebar-close" aria-label="Close sidebar" onClick={() => setSidebarOpen(false)}>×</button>
         </div>
-        <button className="new-chat-button" onClick={beginNewChat}><span>＋</span> New chat</button>
+        <button className="new-chat-button" onClick={beginNewChat}><span aria-hidden="true"><svg viewBox="0 0 16 16" focusable="false"><path d="M8 3v10M3 8h10" /></svg></span> New chat</button>
         <div className="history-heading"><span>YOUR HISTORY</span><span className="history-count">{chats.length}</span></div>
         <nav className="chat-history-list" aria-label="Past conversations">
           {loadingChats && <div className="chat-skeletons" aria-label="Loading conversations">
@@ -409,7 +409,7 @@ export default function ChatWorkspace() {
 
       <section className="chat-main-panel">
         <header className="chat-topbar">
-          <button className="sidebar-toggle" aria-label="Open chat history" onClick={() => setSidebarOpen(true)}>☰</button>
+          <button className="sidebar-toggle" aria-label="Open chat history" onClick={() => setSidebarOpen(true)}><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14" /></svg></button>
           <div className="topbar-title">{activeChat?.title ?? (streamTitle || 'New conversation')}</div>
           <div className="connection-status"><span />Saved to your history</div>
         </header>
@@ -448,8 +448,8 @@ export default function ChatWorkspace() {
           <div className="composer-box">
             <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={onComposerKeyDown} maxLength={8000} rows={1} disabled={streaming} placeholder="Message TDK AI…" aria-label="Message TDK AI" />
             {streaming
-              ? <button type="button" className="stop-button" onClick={stopStreaming} aria-label="Stop response"><span />Stop</button>
-              : <button type="submit" className="send-button" disabled={!draft.trim()} aria-label="Send message">↑</button>}
+              ? <button type="button" className="stop-button" onClick={stopStreaming} aria-label="Stop response"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><rect x="2" y="2" width="8" height="8" rx="1.5" /></svg>Stop</button>
+              : <button type="submit" className="send-button" disabled={!draft.trim()} aria-label="Send message"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 16V4m-5 5 5-5 5 5" /></svg></button>}
           </div>
           <div className="composer-hint">Enter to send <span>·</span> Shift + Enter for a new line <span>·</span> {draft.length}/8,000</div>
         </form>
